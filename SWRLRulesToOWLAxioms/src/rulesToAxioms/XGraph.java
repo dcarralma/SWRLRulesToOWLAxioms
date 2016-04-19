@@ -54,7 +54,7 @@ public class XGraph {
 		return (variableEdges.size() / 2) >= variableVertices.size();
 	}
 
-	public Set<SWRLIArgument> returnUnreachableVariables(SWRLVariable rootVariable) {
+	public Set<SWRLIArgument> returnUnreachableArguments(SWRLVariable rootVariable) {
 		Set<SWRLIArgument> visitedVertices = new HashSet<SWRLIArgument>();
 		visitedVertices.add(rootVariable);
 

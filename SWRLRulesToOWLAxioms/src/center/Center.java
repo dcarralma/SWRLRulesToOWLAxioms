@@ -26,16 +26,16 @@ public class Center {
 
 		ArrayList<SWRLRule> testRules = new ArrayList<SWRLRule>();
 
-		String x = "vX";
-		String y = "vY";
-		String z = "vZ";
-		String v = "vV";
+		String x = "vx";
+		String y = "vy";
+		String z = "vz";
+		String v = "vv";
 
-		String a = "cA";
-		String b = "cB";
-		String c = "cC";
-		String d = "cD";
-		String e = "cE";
+		String a = "a";
+		String b = "b";
+		String c = "c";
+		String d = "d";
+		String e = "e";
 
 		String A = "A";
 		String B = "B";
@@ -49,17 +49,17 @@ public class Center {
 		// D(x), R(x, b), B(b), S(b, c), D(d) :- R(x, y), S(y, a).
 		Set<SWRLAtom> body0 = new HashSet<SWRLAtom>();
 		body0.add(createObjectPropertyAtom(R, x, y));
-		body0.add(createObjectPropertyAtom(S, y, a));
-		body0.add(createAtom(A, a));
+		//		body0.add(createObjectPropertyAtom(R, x, a));
+		//		body0.add(createObjectPropertyAtom(S, y, a));
+		//		body0.add(createAtom(A, a));
 		Set<SWRLAtom> head0 = new HashSet<SWRLAtom>();
-		head0.add(createObjectPropertyAtom(R, x, y));
-		head0.add(createAtom(D, x));
 		head0.add(createObjectPropertyAtom(R, x, b));
-		head0.add(createAtom(B, b));
+		//		head0.add(createObjectPropertyAtom(S, x, b));
+		head0.add(createObjectPropertyAtom(S, c, a));
+		head0.add(createObjectPropertyAtom(S, a, b));
 		head0.add(createObjectPropertyAtom(S, b, c));
 		head0.add(createAtom(D, d));
-		head0.add(createAtom(D, e));
-		head0.add(createObjectPropertyAtom(R, d, e));
+		head0.add(createObjectPropertyAtom(S, d, e));
 		testRules.add(new SWRLRuleImpl(body0, head0, new HashSet<OWLAnnotation>()));
 
 		// D(x) :- A(x), R(x, y), B(y), S(y, z), C(z), V(z, z).
@@ -167,12 +167,21 @@ public class Center {
 		head10.add(createAtom(D, x));
 		testRules.add(new SWRLRuleImpl(body10, head10, new HashSet<OWLAnnotation>()));
 
-		//		// D(x) :- R(x, y).
-		//		Set<SWRLAtom> body10 = new HashSet<SWRLAtom>();
-		//		body10.add(createDataPropertyAtom(roleR, vX, vY));
-		//		Set<SWRLAtom> head10 = new HashSet<SWRLAtom>();
-		//		head10.add(createAtom(conceptD, vX));
-		//		testRules.add(new SWRLRuleImpl(body10, head10, new HashSet<OWLAnnotation>()));
+		// R(x, y):- .
+		Set<SWRLAtom> body11 = new HashSet<SWRLAtom>();
+		Set<SWRLAtom> head11 = new HashSet<SWRLAtom>();
+		head11.add(createObjectPropertyAtom(R, x, y));
+		testRules.add(new SWRLRuleImpl(body11, head11, new HashSet<OWLAnnotation>()));
+
+		// D(x):- .
+		Set<SWRLAtom> head12 = new HashSet<SWRLAtom>();
+		head12.add(createAtom(C, x));
+		testRules.add(new SWRLRuleImpl(new HashSet<SWRLAtom>(), head12, new HashSet<OWLAnnotation>()));
+
+		// :- D(x).
+		Set<SWRLAtom> body13 = new HashSet<SWRLAtom>();
+		body13.add(createAtom(C, x));
+		testRules.add(new SWRLRuleImpl(body13, new HashSet<SWRLAtom>(), new HashSet<OWLAnnotation>()));
 
 		for (SWRLRule testRule : testRules) {
 			System.out.println("Rule: " + Srd.toString(testRule));

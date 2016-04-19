@@ -7,25 +7,50 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLDataPropertyExpression;
+import org.semanticweb.owlapi.model.OWLIndividual;
+import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
 import org.semanticweb.owlapi.model.SWRLArgument;
 import org.semanticweb.owlapi.model.SWRLAtom;
+import org.semanticweb.owlapi.model.SWRLIArgument;
+import org.semanticweb.owlapi.model.SWRLPredicate;
 import org.semanticweb.owlapi.model.SWRLRule;
 import org.semanticweb.owlapi.model.SWRLVariable;
 
 public class Srd {
 
 	public static OWLDataFactory factory = OWLManager.createOWLOntologyManager().getOWLDataFactory();
+	public static int freshCounter = 0;
 
 	// SWRL Related Methods
 
-	protected static ArrayList<SWRLArgument> getArgumentsToArrayList(SWRLAtom atom) {
-		ArrayList<SWRLArgument> arguments = new ArrayList<SWRLArgument>();
+	public static OWLClassExpression createFreshUniqueClass() {
+		return factory.getOWLClass(IRI.create("pluginFreshClass" + freshCounter++));
+	}
+
+	public static Set<SWRLIArgument> getArgumentsToSet(SWRLAtom atom) {
+		Set<SWRLIArgument> arguments = new HashSet<SWRLIArgument>();
+		for (SWRLArgument argument : atom.getAllArguments())
+			arguments.add((SWRLIArgument) argument);
+		return arguments;
+	}
+
+	public static Set<SWRLIArgument> getArgumentsToSet(Set<SWRLAtom> atoms) {
+		Set<SWRLIArgument> arguments = new HashSet<SWRLIArgument>();
+		for (SWRLAtom atom : atoms)
+			arguments.addAll(getArgumentsToSet(atom));
+		return arguments;
+	}
+
+	protected static ArrayList<SWRLIArgument> getArgumentsToArrayList(SWRLAtom atom) {
+		ArrayList<SWRLIArgument> arguments = new ArrayList<SWRLIArgument>();
 		Iterator<SWRLArgument> iterator = atom.getAllArguments().iterator();
 		while (iterator.hasNext())
-			arguments.add(iterator.next());
+			arguments.add((SWRLIArgument) iterator.next());
 		return arguments;
 	}
 
@@ -35,13 +60,6 @@ public class Srd {
 			if (isVariable(argument))
 				variables.add((SWRLVariable) argument);
 		return variables;
-	}
-
-	public static Set<SWRLArgument> getArgumentsToSet(Set<SWRLAtom> atoms) {
-		Set<SWRLArgument> arguments = new HashSet<SWRLArgument>();
-		for (SWRLAtom atom : atoms)
-			arguments.addAll(atom.getAllArguments());
-		return arguments;
 	}
 
 	protected static Set<SWRLVariable> getVariablesToSet(Set<SWRLAtom> atoms) {
@@ -59,8 +77,57 @@ public class Srd {
 		return variables;
 	}
 
+	public static Set<SWRLIArgument> getConstantsToSet(SWRLAtom atom) {
+		Set<SWRLIArgument> constants = new HashSet<SWRLIArgument>();
+		for (SWRLArgument argument : atom.getAllArguments())
+			if (!isVariable(argument))
+				constants.add((SWRLIArgument) argument);
+		return constants;
+	}
+
+	public static Set<SWRLArgument> getConstantsToSet(Set<SWRLAtom> atoms) {
+		Set<SWRLArgument> arguments = new HashSet<SWRLArgument>();
+		for (SWRLAtom atom : atoms)
+			arguments.addAll(getConstantsToSet(atom));
+		return arguments;
+	}
+
+	public static SWRLVariable getHeadVariable(Set<SWRLAtom> head) {
+		SWRLVariable headVariable = null;
+		for (SWRLAtom headAtom : head)
+			for (SWRLArgument headArgument : headAtom.getAllArguments())
+				if (headArgument.toString().contains("Variable"))
+					if (headVariable == null)
+						headVariable = (SWRLVariable) headArgument;
+					else if (!headArgument.toString().equals(headVariable.toString()))
+						System.out.println("WARNING!!! More than 1 different head variable at getHeadVariable");
+		if (headVariable == null)
+			System.out.println("WARNING!!! No head variables at getHeadVariable");
+		return headVariable;
+	}
+
+	public static int getVariableCount(SWRLAtom atom) {
+		Set<String> variables = new HashSet<String>();
+		for (SWRLArgument argument : atom.getAllArguments())
+			if (argument.toString().contains("Variable"))
+				variables.add(argument.toString());
+		return variables.size();
+	}
+
 	protected static boolean isVariable(SWRLArgument argument) {
 		return argument.toString().contains("Variable");
+	}
+
+	public static OWLClassExpression predicateToClass(SWRLPredicate predicate) {
+		return factory.getOWLClass(IRI.create(predicate.toString().replace("<", "").replace(">", "")));
+	}
+
+	public static OWLObjectProperty predicateToRole(SWRLPredicate predicate) {
+		return factory.getOWLObjectProperty(IRI.create(predicate.toString().replace("<", "").replace(">", "")));
+	}
+
+	public static OWLIndividual argumentToIndividual(SWRLArgument root) {
+		return factory.getOWLNamedIndividual(IRI.create(root.toString().replace("<", "").replace(">", "")));
 	}
 
 	// Inverse Role Related Methods
@@ -97,7 +164,10 @@ public class Srd {
 		String bodyString = new String();
 		for (SWRLAtom bodyAtom : body)
 			bodyString += toString(bodyAtom) + ", ";
-		return bodyString.substring(0, bodyString.length() - 2);
+		if (bodyString.equals(""))
+			return bodyString;
+		else
+			return bodyString.substring(0, bodyString.length() - 2);
 	}
 
 	protected static String toString(SWRLAtom atom) {
